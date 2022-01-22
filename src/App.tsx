@@ -1,38 +1,21 @@
 import { useState, useEffect } from "react";
-import { scaleLinear, scaleBand, extent, line, symbol, csv } from "d3";
-import axios from "axios";
+import * as d3 from "d3";
+import spotifyJSON from "./spotifyJSON.js";
 
 function App() {
   const [count, setCount] = useState(0);
 
-  const user = { name: "Colin", city: "Seattle" };
-
   const chartSize = 500;
 
-  const [token, setToken] = useState("");
+  let popularityValues = [];
+  let danceabilityValues = [];
 
-  const clientID = "8d8311a5f1e8418a8fdcaf041cee47e2";
-  const clientSecret = "cef79cfec6034fc0866a18576f6d233b";
+  for (let i = 0; i < spotifyJSON.length - 15000; i++) {
+    popularityValues.push(spotifyJSON[i].popularity);
+    danceabilityValues.push(spotifyJSON[i].danceability);
+  }
 
-  // axios("https://accounts.spotify.com/api/token", {
-  //   headers: {
-  //     "Content-Type": "application/x-www-form-urlencoded",
-  //     Authorization: "Basic " + btoa(clientID + ":" + clientSecret),
-  //   },
-  //   data: "grant_type=client_credentials",
-  //   method: "POST",
-  // }).then((tokenResponse) => {
-  //   console.log(tokenResponse.data.access_token);
-  //   setToken(tokenResponse.data.access_token);
-  // }, []);
-
-  csv(
-    "https://gist.githubusercontent.com/colinmegill/6c405856837dea7f978f337ef864d50e/raw/c0b158814885814c6b1a2cb36202b6577c9ad95d/census.csv",
-    (data: never, a: never) => {
-      console.log(data);
-    }
-  );
-
+  console.log(danceabilityValues);
   return (
     <div className="app">
       <h1 style={{ textAlign: "center" }}>Spotify Data Dashboard</h1>
@@ -41,47 +24,53 @@ function App() {
       <svg
         width={chartSize}
         height={chartSize}
-        style={{ border: "2px solid black" }}
+        style={{
+          border: "2px solid black",
+          display: "block",
+          margin: "auto",
+        }}
       >
-        {[5, 20, 30, 50].map((num, i) => {
-          console.log("the number in position" + i + " is" + num);
+        <text x={15} y={492}>
+          Danceability
+        </text>
+        {[475, 375, 275, 175, 75].map((num, i) => {
+          return <line x1={0} y1={num} x2={500} y2={num} stroke="gray" />;
+        })}
+
+        {[400, 300, 200, 100].map((num, i) => {
+          return <line x1={num} y1={0} x2={num} y2={475} stroke="gray" />;
+        })}
+
+        {[400, 300, 200, 100].map((num, i) => {
           return (
-            <circle cx={50 + i * 100} cy={100} r={num} fill={`rgb(255,0,0)`} />
+            <text x={10} y={470 - num}>
+              {num / 4}
+            </text>
           );
         })}
-        {[5, 20, 30, 50, 60].map((num, i) => {
-          console.log("the number in position" + i + " is" + num);
-          const rectWidth = 40;
+
+        {[400, 300, 200, 100].map((num, i) => {
           return (
-            <rect
-              transform={`rotate(${num}, ${
-                rectWidth / 2 + 30 + i * 120
-              }, ${200})`}
-              x={30 + i * 120}
-              y={200}
-              width={rectWidth}
-              height={10}
-              fill={`rgb(${num * 4}, ${num * 4}, ${num * 4})`}
-            />
+            <text x={num - 27} y={470}>
+              {num / 500}
+            </text>
           );
         })}
-        <text x={180} y={525} transform={`rotate(-90, 0, 500)`}>
-          Minutes Listened
+
+        <text x={30} y={515} transform={`rotate(-90, 0, 500)`}>
+          Popularity
         </text>
-        <text x={100} y={492}>
-          Top 5 most played songs on Spotify
-        </text>
-        //<path d="M 50 50"></path>
-        {[10, 20, 30, 40, 50].map((num, i) => {
-          console.log(i + "This is working");
+
+        {popularityValues.map((songPopularity, i) => {
+          console.log("hello");
           return (
-            <line
-              x1={num * 8}
-              y1={475}
-              x2={num * 8}
-              y2={475 - num * 4}
-              stroke="#1DB954"
-              strokeWidth={50}
+            <circle
+              cx={danceabilityValues[i] * 500}
+              cy={songPopularity * 5}
+              r="2"
+              fill="#1DB954"
+              strokeWidth="3"
+              opacity="0.35"
             />
           );
         })}
@@ -135,3 +124,28 @@ These will only appear if you've run the react-ts vite
             return <circle cx = {d} cy = {d} r = "5" fill="red"/>
         })}
 */
+
+/* {[5, 20, 30, 50].map((num, i) => {
+          console.log("the number in position" + i + " is" + num);
+          return (
+            <circle cx={50 + i * 100} cy={100} r={num} fill={`rgb(255,0,0)`} />
+          );
+        })}
+        {[5, 20, 30, 50, 60].map((num, i) => {
+          console.log("the number in position" + i + " is" + num);
+          const rectWidth = 40;
+          return (
+            <rect
+              transform={`rotate(${num}, ${
+                rectWidth / 2 + 30 + i * 120
+              }, ${200})`}
+              x={30 + i * 120}
+              y={200}
+              width={rectWidth}
+              height={10}
+              fill={`rgb(${num * 4}, ${num * 4}, ${num * 4})`}
+            />
+          );
+        })}
+
+        */
