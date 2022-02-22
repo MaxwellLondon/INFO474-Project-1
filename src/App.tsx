@@ -1,16 +1,15 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import * as d3 from "d3";
 import spotifySongImport from "./spotifySongData.js";
+import spotifyAlbumImport from "./spotifyAlbums.js";
 import { AxisLeft, AxisBottom } from "@visx/axis";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   const chartSize = 500;
 
   let spotifySongData = spotifySongImport[0].audio_features;
 
-  console.log(spotifySongData);
+  let spotifyAlbumData: any = spotifyAlbumImport[0].albums;
 
   const danceabilityScale = d3.scaleLinear().domain([0, 1]).range([20, 480]);
 
@@ -24,7 +23,7 @@ function App() {
 
   const spotifyBins = spotifyBinGenerator(tempoData);
 
-  console.log(spotifyBins);
+  //console.log(spotifyBins);
 
   let tempoScale: any = null;
   let tempoHeightScale: any = null;
@@ -70,6 +69,8 @@ function App() {
     0.75
   );
 
+  const albumPhotosKanye: string[] | undefined = [];
+
   //Bowie Stats
   const maxSpeechinessBowie: number | undefined = d3.max(speechinessDataBowie);
   const minSpeechinessBowie: number | undefined = d3.min(speechinessDataBowie);
@@ -83,6 +84,8 @@ function App() {
     speechinessDataBowie,
     0.75
   );
+
+  const albumPhotosBowie: string[] | undefined = [];
 
   //Prince Stats
   const maxSpeechinessPrince: number | undefined = d3.max(
@@ -103,6 +106,87 @@ function App() {
     0.75
   );
 
+  const albumPhotosPrince: string[] | undefined = [];
+
+  for (let i = 0; i < spotifyAlbumData.length; i++) {
+    if (spotifyAlbumData[i].artists[0].name === "David Bowie") {
+      albumPhotosBowie.push(spotifyAlbumData[i].images[0].url);
+    } else if (spotifyAlbumData[i].artists[0].name === "Prince") {
+      albumPhotosPrince.push(spotifyAlbumData[i].images[0].url);
+    } else {
+      albumPhotosKanye.push(spotifyAlbumData[i].images[0].url);
+    }
+  }
+
+  const [currentOpacity, setVisiblity] = useState<string | number | undefined>(
+    1
+  );
+
+  const [currentArtist, setArtist] = useState<string | undefined>("Kanye West");
+
+  const [currentOverlay, setOverlay] = useState<string | undefined>("None");
+  const [currentOverlayColor, setOverlayColor] = useState<string | undefined>(
+    "None"
+  );
+
+  const [currentOverlayOpacity, setOverlayOpacity] = useState<
+    number | undefined
+  >(1);
+
+  const [currentAlbums, setCurrentAlbums] = useState<string[] | undefined>(
+    albumPhotosKanye
+  );
+
+  function handleVizChange() {
+    if (currentOpacity === 1) {
+      setVisiblity(0);
+    } else {
+      setVisiblity(1);
+    }
+  }
+
+  function handleAlbumsChange(artist: string) {
+    if (artist === "Kanye West") {
+      setCurrentAlbums(albumPhotosKanye);
+    } else if (artist === "Prince") {
+      setCurrentAlbums(albumPhotosPrince);
+    } else if (artist === "David Bowie") {
+      setCurrentAlbums(albumPhotosBowie);
+    } else {
+    }
+  }
+
+  function handleArtistChange(event: any) {
+    handleOverlayChange(event);
+    setArtist(event.target.value);
+    handleAlbumsChange(event.target.value);
+  }
+
+  function handleOverlayChange(event: any) {
+    if (event.target.value === "Kanye West") {
+      setOverlay("Kanye West");
+      setOverlayColor("rgba(220,0,0,0.3)");
+    } else if (event.target.value === "Prince") {
+      setOverlay("Prince");
+      setOverlayColor("rgba(58,35,62,0.3)");
+    } else if (event.target.value === "David Bowie") {
+      setOverlay("David Bowie");
+      setOverlayColor("rgba(0,220,0,0.4)");
+    } else {
+      setOverlay("None");
+      setOverlayColor("None");
+    }
+  }
+
+  //currentOverlayOpacity
+  function handleOpacityChange(event: any) {
+    setOverlayOpacity(event.target.value);
+  }
+
+  const opacityScale = d3.scaleLinear().domain([0, 1]).range([0, 100]);
+
+  //const slider: any = sliderBottom.min(0).max(10).step(1).width(300);
+
   return (
     <div className="app">
       <h1 style={{ textAlign: "center" }}>Spotify Data Dashboard</h1>
@@ -110,6 +194,8 @@ function App() {
       <svg
         width={chartSize}
         height={chartSize}
+        opacity={currentOpacity}
+        onClick={() => handleVizChange()}
         style={{
           border: "2px solid black",
           display: "block",
@@ -147,10 +233,72 @@ function App() {
           Popularity
         </text>
       </svg>
+
+      <menu style={{ textAlign: "center" }}>
+        <label style={{ textAlign: "center" }}>Select Artist: </label>
+
+        <select name="Artist" onChange={(event) => handleArtistChange(event)}>
+          <option value="Kanye West">Kanye West</option>
+          <option value="David Bowie">David Bowie</option>
+          <option value="Prince">Prince</option>
+        </select>
+
+        <label style={{ marginLeft: "10px" }}>Select Artist Overlay: </label>
+
+        <select
+          name="Artist"
+          onChange={(event) => handleOverlayChange(event)}
+          style={{ margin: "auto" }}
+        >
+          <option value="None">None</option>
+          <option value="Kanye West">Kanye West</option>
+          <option value="David Bowie">David Bowie</option>
+          <option value="Prince">Prince</option>
+        </select>
+
+        <label style={{ marginLeft: "10px" }}>Adjust Overlay Opacity: </label>
+
+        <input
+          onChange={(event) => handleOpacityChange(event)}
+          type="range"
+          id="points"
+          name="points"
+          min="0"
+          max="1"
+          step="0.1"
+        ></input>
+      </menu>
+      <div
+        style={{ textAlign: "center", fontSize: "140%", marginBottom: "15px" }}
+      >
+        Current Albums
+      </div>
       <svg
         width="500"
         height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        style={{
+          border: "1px solid black",
+          display: "block",
+          margin: "auto",
+        }}
+      >
+        {currentAlbums &&
+          currentAlbums.map((url, i) => {
+            return (
+              <image href={url} height={100} width={100} x={i * 100} y={0} />
+            );
+          })}
+      </svg>
+
+      <svg
+        width="500"
+        height="100"
+        visibility={currentArtist === "Kanye West" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Kanye West" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <foreignObject x="0" y="20" width="500" height="200">
           <text x={0} y={20}>
@@ -162,7 +310,12 @@ function App() {
       <svg
         width="500"
         height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Kanye West" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Kanye West" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         {spotifySongData.map((song, i) => {
           if (song.artist === "Kanye West") {
@@ -172,7 +325,22 @@ function App() {
                 x2={song.danceability * 460 + 20}
                 y1={20}
                 y2={150}
-                style={{ stroke: "rgba(220,0,0,.2)" }}
+                style={{ stroke: "rgba(220,0,0,0.3)" }}
+              />
+            );
+          }
+        })}
+
+        {spotifySongData.map((song, i) => {
+          if (song.artist === currentOverlay) {
+            return (
+              <line
+                x1={song.danceability * 460 + 20}
+                x2={song.danceability * 460 + 20}
+                y1={20}
+                y2={150}
+                style={{ stroke: currentOverlayColor }}
+                opacity={currentOverlayOpacity}
               />
             );
           }
@@ -187,11 +355,15 @@ function App() {
           Kanye West Danceability
         </text>
       </svg>
-
       <svg
         width="500"
         height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "David Bowie" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "David Bowie" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <foreignObject x="0" y="20" width="500" height="200">
           <text x={0} y={20}>
@@ -200,11 +372,15 @@ function App() {
           </text>
         </foreignObject>
       </svg>
-
       <svg
         width="500"
         height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "David Bowie" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "David Bowie" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         {spotifySongData.map((song, i) => {
           if (song.artist === "David Bowie") {
@@ -214,7 +390,22 @@ function App() {
                 x2={song.danceability * 460 + 20}
                 y1={20}
                 y2={150}
-                style={{ stroke: "rgba(0,220,0,.2)" }}
+                style={{ stroke: "rgba(0,220,0,0.4)" }}
+              />
+            );
+          }
+        })}
+
+        {spotifySongData.map((song, i) => {
+          if (song.artist === currentOverlay) {
+            return (
+              <line
+                x1={song.danceability * 460 + 20}
+                x2={song.danceability * 460 + 20}
+                y1={20}
+                y2={150}
+                style={{ stroke: currentOverlayColor }}
+                opacity={currentOverlayOpacity}
               />
             );
           }
@@ -229,11 +420,15 @@ function App() {
           David Bowie Danceability
         </text>
       </svg>
-
       <svg
         width="500"
         height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Prince" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Prince" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <foreignObject x="0" y="20" width="500" height="200">
           <text x={0} y={20}>
@@ -242,11 +437,15 @@ function App() {
           </text>
         </foreignObject>
       </svg>
-
       <svg
         width="500"
         height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Prince" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Prince" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         {spotifySongData.map((song, i) => {
           if (song.artist === "Prince") {
@@ -256,7 +455,22 @@ function App() {
                 x2={song.danceability * 460 + 20}
                 y1={20}
                 y2={150}
-                style={{ stroke: "rgba(48,25,52,.2)" }}
+                style={{ stroke: "rgba(48,25,52, 0.3)" }}
+              />
+            );
+          }
+        })}
+
+        {spotifySongData.map((song, i) => {
+          if (song.artist === currentOverlay) {
+            return (
+              <line
+                x1={song.danceability * 460 + 20}
+                x2={song.danceability * 460 + 20}
+                y1={20}
+                y2={150}
+                style={{ stroke: currentOverlayColor }}
+                opacity={currentOverlayOpacity}
               />
             );
           }
@@ -271,11 +485,15 @@ function App() {
           Prince Danceability
         </text>
       </svg>
-
       <svg
         width="500"
         height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Kanye West" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Kanye West" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <foreignObject x="0" y="20" width="500" height="200">
           <text x={0} y={20}>
@@ -284,11 +502,15 @@ function App() {
           </text>
         </foreignObject>
       </svg>
-
       <svg
         width="500"
         height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Kanye West" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Kanye West" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         {spotifySongData.map((song, i) => {
           if (song.artist === "Kanye West") {
@@ -297,7 +519,21 @@ function App() {
                 cx={danceabilityScale(song.energy)}
                 cy={Math.random() * (150 - 20) + 20}
                 r={4}
-                style={{ stroke: "rgba(220,0, 0,.5)", fill: "none" }}
+                style={{ stroke: "rgba(220,0,0,0.3)", fill: "none" }}
+              />
+            );
+          }
+        })}
+
+        {spotifySongData.map((song, i) => {
+          if (song.artist === currentOverlay) {
+            return (
+              <circle
+                cx={danceabilityScale(song.energy)}
+                cy={Math.random() * (150 - 20) + 20}
+                r={4}
+                style={{ stroke: currentOverlayColor, fill: "none" }}
+                opacity={currentOverlayOpacity}
               />
             );
           }
@@ -313,11 +549,15 @@ function App() {
           Kanye West Energy
         </text>
       </svg>
-
       <svg
         width="500"
         height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "David Bowie" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "David Bowie" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <foreignObject x="0" y="20" width="500" height="200">
           <text x={0} y={20}>
@@ -326,11 +566,15 @@ function App() {
           </text>
         </foreignObject>
       </svg>
-
       <svg
         width="500"
         height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "David Bowie" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "David Bowie" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         {spotifySongData.map((song, i) => {
           if (song.artist === "David Bowie") {
@@ -339,7 +583,21 @@ function App() {
                 cx={danceabilityScale(song.energy)}
                 cy={Math.random() * (150 - 20) + 20}
                 r={4}
-                style={{ stroke: "rgba(0 ,220, 0,.5)", fill: "none" }}
+                style={{ stroke: "rgba(0,220,0,0.4)", fill: "none" }}
+              />
+            );
+          }
+        })}
+
+        {spotifySongData.map((song, i) => {
+          if (song.artist === currentOverlay) {
+            return (
+              <circle
+                cx={danceabilityScale(song.energy)}
+                cy={Math.random() * (150 - 20) + 20}
+                r={4}
+                style={{ stroke: currentOverlayColor, fill: "none" }}
+                opacity={currentOverlayOpacity}
               />
             );
           }
@@ -354,11 +612,15 @@ function App() {
           David Bowie Energy
         </text>
       </svg>
-
       <svg
         width="500"
         height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Prince" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Prince" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <foreignObject x="0" y="20" width="500" height="200">
           <text x={0} y={20}>
@@ -367,11 +629,15 @@ function App() {
           </text>
         </foreignObject>
       </svg>
-
       <svg
         width="500"
         height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Prince" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Prince" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         {spotifySongData.map((song, i) => {
           if (song.artist === "Prince") {
@@ -380,7 +646,21 @@ function App() {
                 cx={danceabilityScale(song.energy)}
                 cy={Math.random() * (150 - 20) + 20}
                 r={4}
-                style={{ stroke: "rgba(48,25,52,.5)", fill: "none" }}
+                style={{ stroke: "rgba(48,25,52,0.3)", fill: "none" }}
+              />
+            );
+          }
+        })}
+
+        {spotifySongData.map((song, i) => {
+          if (song.artist === currentOverlay) {
+            return (
+              <circle
+                cx={danceabilityScale(song.energy)}
+                cy={Math.random() * (150 - 20) + 20}
+                r={4}
+                style={{ stroke: currentOverlayColor, fill: "none" }}
+                opacity={currentOverlayOpacity}
               />
             );
           }
@@ -399,60 +679,12 @@ function App() {
       <svg
         width="500"
         height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
-      >
-        <foreignObject x="0" y="20" width="500" height="200">
-          <text x={0} y={20}>
-            This is a Histogram of all three artists song tempo. Here we can see
-            which tempos are most common between all three artists
-          </text>
-        </foreignObject>
-      </svg>
-
-      <svg
-        width="500"
-        height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
-      >
-        <text x={5} y={15}>
-          Histogram of song tempo from Kanye, Bowie and Prince
-        </text>
-        {spotifyBins.map((value, i) => {
-          return (
-            <rect
-              key={i}
-              x={tempoScale && tempoScale(value.x0) - 45}
-              y={200 - value.length - 25}
-              width={45}
-              height={value.length}
-              style={{
-                fill: "steelblue",
-                strokeWidth: "0",
-                stroke: "rgb(0,0,0)",
-                border: "clear",
-              }}
-            />
-          );
-        })}
-
-        {tempoScale && (
-          <AxisBottom
-            strokeWidth={1}
-            top={200 - 25}
-            scale={tempoScale}
-            numTicks={9}
-          />
-        )}
-
-        {tempoHeightScale && (
-          <AxisLeft strokeWidth={0} left={25} scale={tempoHeightScale} />
-        )}
-      </svg>
-
-      <svg
-        width="500"
-        height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Kanye West" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Kanye West" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <foreignObject x="0" y="20" width="500" height="200">
           <text x={0} y={20}>
@@ -463,11 +695,15 @@ function App() {
           </text>
         </foreignObject>
       </svg>
-
       <svg
         width="500"
         height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Kanye West" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Kanye West" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <text x={5} y={15}>
           Kanye West Speechiness
@@ -559,11 +795,15 @@ function App() {
           />
         )}
       </svg>
-
       <svg
         width="500"
         height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "David Bowie" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "David Bowie" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <foreignObject x="0" y="20" width="500" height="200">
           <text x={0} y={20}>
@@ -572,11 +812,15 @@ function App() {
           </text>
         </foreignObject>
       </svg>
-
       <svg
         width="500"
         height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "David Bowie" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "David Bowie" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <text x={5} y={15}>
           David Bowie Speechiness
@@ -668,24 +912,31 @@ function App() {
           />
         )}
       </svg>
-
       <svg
         width="500"
         height="100"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        visibility={currentArtist === "Prince" ? "visible" : "hidden"}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Prince" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <foreignObject x="0" y="20" width="500" height="200">
           <text x={0} y={20}>
-            This is a box and whisker plot of David Prince's Speechiness.
-            Similar to Bowie, Princes songs are not very speechy.
+            This is a box and whisker plot of Prince's Speechiness. Similar to
+            Bowie, Princes songs are not very speechy.
           </text>
         </foreignObject>
       </svg>
-
       <svg
         width="500"
         height="200"
-        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+        style={{
+          border: "1px solid black",
+          display: currentArtist === "Prince" ? "block" : "none",
+          margin: "auto",
+        }}
       >
         <text x={5} y={15}>
           Prince Speechiness
@@ -775,6 +1026,57 @@ function App() {
             y2={80}
             stroke="black"
           />
+        )}
+      </svg>
+      <svg
+        width="500"
+        height="100"
+        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+      >
+        <foreignObject x="0" y="20" width="500" height="200">
+          <text x={0} y={20}>
+            This is a Histogram of all three artists song tempo. Here we can see
+            which tempos are most common between all three artists
+          </text>
+        </foreignObject>
+      </svg>
+      <svg
+        width="500"
+        height="200"
+        style={{ border: "1px solid black", display: "block", margin: "auto" }}
+      >
+        <text x={5} y={15}>
+          Histogram of song tempo from Kanye, Bowie and Prince
+        </text>
+        {spotifyBins.map((value, i) => {
+          return (
+            <rect
+              key={i}
+              x={tempoScale && tempoScale(value.x0) - 45}
+              y={200 - value.length - 25}
+              width={45}
+              height={value.length}
+              style={{
+                fill: "steelblue",
+                strokeWidth: "0",
+                stroke: "rgb(0,0,0)",
+                border: "clear",
+              }}
+            />
+          );
+        })}
+
+        {tempoScale && (
+          <AxisBottom
+            strokeWidth={1}
+            top={200 - 25}
+            scale={tempoScale}
+            numTicks={9}
+          />
+        )}
+
+        {tempoHeightScale && (
+          <AxisLeft strokeWidth={0} left={25} scale={tempoHeightScale} />
         )}
       </svg>
     </div>
