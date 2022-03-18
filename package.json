@@ -12,7 +12,9 @@
     "d3": "^7.3.0",
     "d3-simple-slider": "^1.10.4",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2"
+    "react-dom": "^17.0.2",
+    "react-svg-tooltip": "0.0.11",
+    "react-tooltip": "^4.2.21"
   },
   "devDependencies": {
     "@types/d3": "^7.1.0",
